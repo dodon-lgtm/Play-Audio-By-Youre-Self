@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="id">
+
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#0b0f17" />
+  <title>Music Player PWA</title>
+  <link rel="manifest" href="./manifest.json" />
+
+  <link rel="stylesheet" href="./css/style.css" />
+  <link rel="stylesheet" href="./css/sidebar.css" />
+  <link rel="stylesheet" href="./css/player.css" />
+  <link rel="stylesheet" href="./css/responsive.css" />
+</head>
+
+<body>
+  <div class="app-shell">
+    <!-- SIDEBAR / NAV -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true">♪</div>
+        <div class="brand-text">
+          <div class="brand-title">Music</div>
+          <div class="brand-sub">Local Player</div>
+        </div>
+      </div>
+
+      <nav class="nav">
+        <button class="nav-item is-active" data-route="home">
+          <span class="nav-icon" aria-hidden="true">🏠</span>
+          <span class="nav-label">Home</span>
+        </button>
+        <button class="nav-item" data-route="search">
+          <span class="nav-icon" aria-hidden="true">🔎</span>
+          <span class="nav-label">Cari</span>
+        </button>
+        <button class="nav-item" data-route="collection">
+          <span class="nav-icon" aria-hidden="true">🎵</span>
+          <span class="nav-label">Koleksi Saya</span>
+        </button>
+        <button class="nav-item" data-route="favorites">
+          <span class="nav-icon" aria-hidden="true">⭐</span>
+          <span class="nav-label">Favorit</span>
+        </button>
+        <button class="nav-item" data-route="playlists">
+          <span class="nav-icon" aria-hidden="true">🗂️</span>
+          <span class="nav-label">Playlist</span>
+        </button>
+        <div class="nav-divider"></div>
+
+        <input id="filePicker" class="file-input" type="file" multiple
+          accept="audio/mpeg,audio/wav,audio/ogg,.mp3,.wav,.opus" hidden />
+        <button class="nav-item nav-primary" id="addAudioBtn" type="button">
+          <span class="nav-icon" aria-hidden="true">➕</span>
+          <span class="nav-label">Tambah audio</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <!-- <div class="hint">Offline app shell via PWA.</div>
+        <div class="hint muted">Audio lokal tetap perlu dipilih ulang setelah refresh.</div> -->
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main" aria-live="polite">
+      <button class="hamburger" id="hamburger" type="button" aria-label="Menu">
+        <span></span><span></span><span></span>
+      </button>
+      <div class="page page-animate" id="page">
+        <!-- UI injected by ui.js -->
+      </div>
+    </main>
+
+    <!-- HAMBURGER MENU OVERLAY -->
+    <div class="hamburger-overlay" id="hamburgerOverlay">
+      <div class="hamburger-menu">
+        <button class="menu-close" id="menuClose" type="button">&times;</button>
+        <nav class="menu-nav">
+          <button class="menu-item" data-route="home">
+            <span class="menu-icon">🏠</span>
+            <span>Local Player</span>
+          </button>
+          <button class="menu-item" data-route="home">
+            <span class="menu-icon">🏠</span>
+            <span>Home</span>
+          </button>
+          <button class="menu-item" data-route="search">
+            <span class="menu-icon">🔎</span>
+            <span>Cari</span>
+          </button>
+          <button class="menu-item" data-route="collection">
+            <span class="menu-icon">🎵</span>
+            <span>Koleksi Saya</span>
+          </button>
+          <button class="menu-item" data-route="favorites">
+            <span class="menu-icon">⭐</span>
+            <span>Favorit</span>
+          </button>
+          <button class="menu-item" data-route="playlists">
+            <span class="menu-icon">🗂️</span>
+            <span>Playlist</span>
+          </button>
+          <div class="menu-divider"></div>
+          <button class="menu-item menu-primary" id="addAudioBtnMenu" type="button">
+            <span class="menu-icon">➕</span>
+            <span>Tambah Audio</span>
+          </button>
+        </nav>
+      </div>
+    </div>
+
+    <!-- BOTTOM NAV for mobile -->
+    <nav class="bottom-nav" id="bottomNav" aria-label="Menu">
+      <button class="bottom-item is-active" data-route="home" type="button">🏠</button>
+      <button class="bottom-item" data-route="search" type="button">🔎</button>
+      <button class="bottom-item" data-route="collection" type="button">🎵</button>
+      <button class="bottom-item" data-route="favorites" type="button">⭐</button>
+      <button class="bottom-item" data-route="playlists" type="button">🗂️</button>
+      <button class="bottom-item bottom-add" id="addAudioBtnMobile" type="button">➕</button>
+    </nav>
+
+    <!-- PLAYER -->
+    <section class="player" id="player" aria-label="Player">
+      <div class="player-grid">
+        <div class="player-track">
+          <div class="cover" id="playerCover" aria-hidden="true"></div>
+          <div class="track-meta">
+            <div class="track-title" id="playerTitle">Belum ada audio</div>
+            <div class="track-sub" id="playerSubtitle">—</div>
+          </div>
+        </div>
+
+        <div class="player-controls">
+          <button class="btn-icon" id="btnPrev" type="button" aria-label="Previous">⏮</button>
+          <button class="btn-icon btn-play" id="btnPlayPause" type="button" aria-label="Play/Pause">▶</button>
+          <button class="btn-icon" id="btnNext" type="button" aria-label="Next">⏭</button>
+
+          <div class="btn-row">
+            <button class="btn-pill" id="btnShuffle" type="button" aria-pressed="false">Shuffle</button>
+            <button class="btn-pill" id="btnRepeat" type="button" aria-pressed="false">Repeat: off</button>
+          </div>
+        </div>
+
+        <div class="player-progress">
+          <div class="progress-top">
+            <span class="time" id="currentTime">0:00</span>
+            <div class="progress-wrap">
+              <input id="progressRange" type="range" min="0" max="1000" value="0" step="1" aria-label="Progress" />
+              <div class="progress-bar" aria-hidden="true">
+                <div class="progress-fill" id="progressFill"></div>
+              </div>
+            </div>
+            <span class="time" id="durationTime">0:00</span>
+          </div>
+          <div class="volume-row">
+            <span class="volume-label">Vol</span>
+            <input id="volumeRange" type="range" min="0" max="1" value="0.8" step="0.01" aria-label="Volume" />
+            <span class="volume-value" id="volumeValue">80%</span>
+          </div>
+        </div>
+      </div>
+
+      <audio id="audio" preload="metadata"></audio>
+    </section>
+  </div>
+
+  <script src="./js/storage.js" type="module"></script>
+  <script src="./js/player.js" type="module"></script>
+  <script src="./js/playlist.js" type="module"></script>
+  <script src="./js/search.js" type="module"></script>
+  <script src="./js/ui.js" type="module"></script>
+  <script src="./js/app.js" type="module"></script>
+
+  <noscript>Aktifkan JavaScript untuk menjalankan aplikasi.</noscript>
+
+  <script>
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', async () => {
+        try {
+          const reg = await navigator.serviceWorker.register('./service-worker.js');
+          console.log('Service Worker berhasil:', reg);
+        } catch (err) {
+          console.error('Service Worker gagal:', err);
+        }
+      });
+    }
+  </script>
+</body>
+
+</html>

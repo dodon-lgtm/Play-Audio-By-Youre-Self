@@ -1,0 +1,19 @@
+-halaman semakin besar ketika menambah lagu ke playlist <✨>
+-update halaman untuk android dan desktop,
+	dengan menambah garis tiga yang 
+	nantinya akan muncul music local player, home, cari,
+	koleksi saya, faforit, plalist, dan tambah audio. Garis 3 ini ada di atas kanan <✨>
+-menambah fitur hapus untuk menghapus playlist <✨>
+-bisa mengklik card lagu yang ada nama, durasi 
+	pokoknya seluruh card itu agar bisa di klik seperti play yang ada di kiri
+	agar bisa di putar lagunya tanpa harus klik tombol segitiga itu
+-form bar cari tolong tunggu user berhenti 300ms untuk mencari lagu,
+	jadi saat mengklik 1 huruf itu belum mencari sebelum 300ms
+	baru akan mencari setelah lebih dari 300ms, jadi memberi waktu user
+	untuk mengetik
+
+---<✨ALL DONE✨>---
+
+new
+- bagaimana caranya supaya bisa mengklik skip lagu atau lagu sebelumnya
+	lewat hardware tws

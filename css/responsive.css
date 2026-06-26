@@ -1,0 +1,13 @@
+@media (max-width: 980px){
+  .player-grid{grid-template-columns: 1fr 320px; grid-template-rows:auto auto;}
+  .player-progress{grid-column: 1 / -1;}
+}
+
+@media (max-width: 760px){
+  .player-grid{padding:12px 12px; grid-template-columns: 1fr; gap:10px;}
+  .player-controls{flex-direction:row; align-items:center; justify-content:space-between;}
+  .btn-row{display:none;}
+  .progress-top{grid-template-columns: 50px 1fr 60px;}
+  #volumeRange{width: 140px;}
+}
+

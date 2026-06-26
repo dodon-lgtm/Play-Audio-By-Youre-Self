@@ -1,0 +1,85 @@
+.sidebar{
+  width:260px;
+  padding:18px 16px;
+  border-right: 1px solid var(--border);
+  background: linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+  position: sticky;
+  top:0;
+  height:100vh;
+  overflow-y:auto;
+  flex-shrink:0;
+}
+
+.brand{display:flex; gap:12px; align-items:center; padding:10px 6px 16px;}
+.brand-mark{
+  width:42px; height:42px; border-radius: 12px;
+  background: rgba(29,185,84,.14);
+  border:1px solid rgba(29,185,84,.35);
+  display:flex; align-items:center; justify-content:center;
+  font-size:20px;
+}
+.brand-title{font-weight:800; letter-spacing:.2px;}
+.brand-sub{color:var(--muted); font-size:12px; margin-top:2px;}
+
+.nav{display:flex; flex-direction:column; gap:6px;}
+.nav-item{
+  width:100%;
+  display:flex;
+  gap:12px;
+  align-items:center;
+  padding:12px 12px;
+  border-radius: 14px;
+  border:1px solid transparent;
+  background: transparent;
+  color: var(--text);
+  cursor:pointer;
+  transition: background .2s ease, border-color .2s ease;
+}
+.nav-item:hover{background: rgba(255,255,255,.05);}
+.nav-item.is-active{
+  background: rgba(29,185,84,.14);
+  border-color: rgba(29,185,84,.35);
+}
+
+.nav-icon{width:26px; text-align:center;}
+.nav-label{font-weight:600; font-size:14px;}
+
+.nav-divider{height:1px; background: rgba(255,255,255,.08); margin:10px 0;}
+
+.nav-primary{
+  background: rgba(29,185,84,.12);
+  border-color: rgba(29,185,84,.35);
+}
+
+.sidebar-footer{margin-top:18px; padding:12px 6px 0;}
+.hint{font-size:12px; color:var(--muted); line-height:1.35;}
+.hint.muted{opacity:.85;}
+
+.bottom-nav{display:none;}
+
+@media (max-width: 760px){
+  .sidebar{display:none;}
+  .bottom-nav{
+    display:flex;
+    position: fixed;
+    left:0; right:0; bottom: 86px;
+    height:52px;
+    background: rgba(17,24,39,.85);
+    border-top:1px solid var(--border);
+    backdrop-filter: blur(10px);
+    z-index: 50;
+  }
+  .bottom-item{
+    flex:1;
+    background: transparent;
+    border:none;
+    color:var(--muted);
+    font-size:18px;
+    cursor:pointer;
+  }
+  .bottom-item.is-active{color: var(--text);}
+  .bottom-add{color: var(--accent); font-size:20px;}
+
+  .main{padding:18px 14px 155px; overflow-y:auto; max-height:calc(100vh - 52px - 86px);}
+}
+
