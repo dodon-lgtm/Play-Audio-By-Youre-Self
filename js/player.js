@@ -44,6 +44,15 @@ export class Player {
     this.el.btnPrev.addEventListener('click', () => this.prev());
     this.el.btnNext.addEventListener('click', () => this.next());
 
+    // Keyboard: Space bar untuk play/stop
+    document.addEventListener('keydown', (e) => {
+      if (e.code === 'Space') {
+        e.preventDefault();
+        if (this.audio.paused) this.play();
+        else this.pause();
+      }
+    });
+
     // Bluetooth/TWS/Headphone media controls (Media Session API)
     this._setupMediaSession();
 
