@@ -1,4 +1,4 @@
-import { getTrack } from './db.js';
+import { getTrack, getCover } from './db.js';
 import { setLastPlayed, setSettings, getSettings, getLibrary } from './storage.js';
 
 export class Player {
@@ -138,14 +138,28 @@ export class Player {
     setSettings({ ...s, volume: newVol });
   }
 
-  _updateMediaSession(track) {
+  async _updateMediaSession(track) {
     if (!('mediaSession' in navigator)) return;
+
+    // Ambil cover dari IndexedDB
+    let artwork = [];
+    if (track?.id) {
+      try {
+        const stored = await getCover(track.id);
+        if (stored?.blob) {
+          const dataUrl = await blobToDataURL(stored.blob);
+          artwork = [
+            { src: dataUrl, sizes: '512x512', type: stored.blob.type || 'image/png' }
+          ];
+        }
+      } catch {}
+    }
 
     navigator.mediaSession.metadata = new MediaMetadata({
       title: track?.title || '',
-      artist: track?.playlistName || '',
+      artist: '',
       album: '',
-      artwork: []
+      artwork
     });
     this._updateMediaSessionState();
   }
@@ -212,6 +226,9 @@ export class Player {
     this.onTrackChanged?.(track);
     this._syncProgressMax();
     this._setPlayIcon(true);
+
+    // Update Media Session metadata with title & cover
+    this._updateMediaSession(track);
   }
 
   play() {
@@ -321,4 +338,12 @@ function formatTime(seconds) {
   const m = Math.floor(s / 60);
   const r = Math.floor(s % 60);
   return m + ':' + String(r).padStart(2, '0');
+}
+
+function blobToDataURL(blob) {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.readAsDataURL(blob);
+  });
 }
