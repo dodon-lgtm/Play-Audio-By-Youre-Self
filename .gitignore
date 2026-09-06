@@ -1,0 +1,9 @@
+# Node
+node_modules
+
+# Build output
+dist
+
+# Local / editor
+*.local
+.DS_Store

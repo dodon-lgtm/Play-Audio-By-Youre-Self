@@ -1,21 +1,16 @@
-const CACHE_NAME = 'music-player-pwa-v1';
+// CACHE_NAME disinkronkan dengan alur build Vite:
+// - Aset JS/CSS hasil build ber-hash di-cache secara runtime (lihat handler fetch).
+// - APP_SHELL hanya berisi file statis Vite yang disalin verbatim dari public/.
+const CACHE_NAME = 'music-player-pwa-v4';
 
 const APP_SHELL = [
   './',
   './index.html',
   './manifest.json',
-  './css/style.css',
-  './css/sidebar.css',
-  './css/player.css',
-  './css/responsive.css',
-  './js/app.js',
-  './js/ui.js',
-  './js/storage.js',
-  './js/player.js',
-  './js/playlist.js',
-  './js/search.js',
   './assets/icons/icon-192.png',
-  './assets/icons/icon-512.png'
+  './assets/icons/icon-512.png',
+  './assets/icons/logoAS.png',
+  './assets/covers/default.png'
 ];
 
 self.addEventListener('install', (event) => {
@@ -43,8 +38,8 @@ self.addEventListener('fetch', (event) => {
       if (cached) return cached;
 
       return fetch(req).then((res) => {
-        // Cache successful responses for app shell assets.
-        if (res && res.status === 200 && (req.destination === '' || req.destination === 'document' || req.destination === 'script' || req.destination === 'style' || req.destination === 'image')) {
+        // Runtime-cache aset hasil build Vite (ber-hash) + dokumen + gambar.
+        if (res && res.status === 200 && (req.destination === '' || req.destination === 'document' || req.destination === 'script' || req.destination === 'style' || req.destination === 'image' || req.destination === 'font')) {
           const copy = res.clone();
           caches.open(CACHE_NAME).then((cache) => cache.put(req, copy));
         }

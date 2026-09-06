@@ -1,9 +1,59 @@
-import { getTrack, getCover } from './db.js';
-import { setLastPlayed, setSettings, getSettings, getLibrary } from './storage.js';
+// ============================================================
+// player.ts — Mesin Pemutar (Player Engine)
+// Port TypeScript dari js/player.js.
+// Fitur: queue (shuffle/repeat), Media Session API (Bluetooth/TWS),
+// progress bar, volume, dan pembebasan Object URL.
+// ============================================================
+
+import { getCover, getTrack } from './db';
+import { getSettings, setLastPlayed, setSettings } from './storage';
+import type { RepeatMode } from '../types/track';
+import type { PlayerDomElements } from '../types/app';
+// Helper ikon SVG presentational (digunakan untuk swap play/pause & pill shuffle/repeat).
+import { iconPause, iconPlay, iconRepeat, iconShuffle } from '../ui/icons';
+
+/** Track ringkas yang siap dimainkan (data lengkap diambil dari IndexedDB saat bind). */
+export interface PlayableTrack {
+  id: string;
+  title: string;
+  ext?: string;
+  playlistName?: string;
+}
+
+/** Informasi queue aktif dari konteks saat ini. */
+export interface PlayerQueueInfo {
+  queue: string[];
+  contextName: string;
+}
+
+interface PlayerOptions {
+  audioEl: HTMLAudioElement;
+  elements: PlayerDomElements;
+  getActiveQueue: () => PlayerQueueInfo;
+}
 
 export class Player {
+  audio: HTMLAudioElement;
+  el: PlayerDomElements;
+  getActiveQueue: () => PlayerQueueInfo;
 
-  constructor({ audioEl, elements, getActiveQueue }) {
+  state: {
+    currentIndex: number;
+    isShuffling: boolean;
+    repeatMode: RepeatMode;
+  };
+
+  /** Dipanggil saat pengguna pindah lagu (prev/next). */
+  onSeekToIndex?: (trackId: string) => void | Promise<void>;
+  /** Dipanggil saat lagu berhasil di-bind ke audio. */
+  onTrackChanged?: (track: PlayableTrack) => void;
+  /** Hook opsional untuk restore lagu terakhir (dipakai app jika ingin). */
+  onTrackBindingRequired?: (trackId: string) => void | Promise<void>;
+
+  /** Object URL lagu aktif; di-revoke saat ganti lagu (cegah memory leak). */
+  private _currentObjectUrl: string | null = null;
+
+  constructor({ audioEl, elements, getActiveQueue }: PlayerOptions) {
     this.audio = audioEl;
     this.el = elements;
     this.getActiveQueue = getActiveQueue;
@@ -14,13 +64,10 @@ export class Player {
       repeatMode: 'off'
     };
 
-    // Track current objectUrl for cleanup
-    this._currentObjectUrl = null;
-
     this._bind();
   }
 
-  initFromStorage() {
+  initFromStorage(): void {
     const settings = getSettings();
     this.audio.volume = settings.volume;
     this.el.volumeRange.value = String(settings.volume);
@@ -31,11 +78,7 @@ export class Player {
     this._syncShuffleRepeatUI();
   }
 
-  onTrackBindingRequired(trackId) {
-    // Optional hook - implemented by app.js
-  }
-
-  _bind() {
+  private _bind(): void {
     this.el.btnPlayPause.addEventListener('click', () => {
       if (this.audio.paused) this.play();
       else this.pause();
@@ -44,13 +87,14 @@ export class Player {
     this.el.btnPrev.addEventListener('click', () => this.prev());
     this.el.btnNext.addEventListener('click', () => this.next());
 
-    // Keyboard: Space bar untuk play/stop
+    // Keyboard: Space bar untuk play/stop.
+    // Diabaikan saat user mengetik di input/textarea agar tidak memicu play/pause.
     document.addEventListener('keydown', (e) => {
-      if (e.code === 'Space') {
-        e.preventDefault();
-        if (this.audio.paused) this.play();
-        else this.pause();
-      }
+      if (e.code !== 'Space') return;
+      if (isTypingElement(document.activeElement)) return;
+      e.preventDefault();
+      if (this.audio.paused) this.play();
+      else this.pause();
     });
 
     // Bluetooth/TWS/Headphone media controls (Media Session API)
@@ -64,7 +108,7 @@ export class Player {
     });
 
     this.el.btnRepeat.addEventListener('click', () => {
-      const order = ['off', 'one', 'all'];
+      const order: RepeatMode[] = ['off', 'one', 'all'];
       const idx = order.indexOf(this.state.repeatMode);
       this.state.repeatMode = order[(idx + 1) % order.length];
       this._syncShuffleRepeatUI();
@@ -106,7 +150,7 @@ export class Player {
     });
   }
 
-  _setupMediaSession() {
+  private _setupMediaSession(): void {
     // Media Session API untuk Bluetooth/TWS/Headphone controls
     if (!('mediaSession' in navigator)) return;
 
@@ -123,13 +167,10 @@ export class Player {
       const dur = this.audio.duration || 0;
       this.audio.currentTime = Math.min(dur, this.audio.currentTime + 10);
     });
-
-    // Custom: Volume up/down via long press (fallback)
-    this._mediaSessionVolumeHandler = (dir) => this.setVolume(dir === 'up' ? 0.1 : -0.1);
   }
 
-  // Volume control via Bluetooth - panggil dengan player.setVolume(0.1) atau -0.1 - dipanggil dari luar
-  setVolume(delta) {
+  // Volume control via Bluetooth - panggil dengan player.setVolume(0.1) atau -0.1
+  setVolume(delta: number): void {
     const newVol = Math.max(0, Math.min(1, this.audio.volume + delta));
     this.audio.volume = newVol;
     this.el.volumeRange.value = String(newVol);
@@ -138,11 +179,11 @@ export class Player {
     setSettings({ ...s, volume: newVol });
   }
 
-  async _updateMediaSession(track) {
+  private async _updateMediaSession(track: PlayableTrack): Promise<void> {
     if (!('mediaSession' in navigator)) return;
 
     // Ambil cover dari IndexedDB
-    let artwork = [];
+    let artwork: MediaImage[] = [];
     if (track?.id) {
       try {
         const stored = await getCover(track.id);
@@ -164,32 +205,32 @@ export class Player {
     this._updateMediaSessionState();
   }
 
-  _updateMediaSessionState() {
+  private _updateMediaSessionState(): void {
     if (!('mediaSession' in navigator)) return;
-
     navigator.mediaSession.playbackState = this.audio.paused ? 'paused' : 'playing';
   }
 
-  _syncShuffleRepeatUI() {
+  private _syncShuffleRepeatUI(): void {
     this.el.btnShuffle.classList.toggle('is-active', this.state.isShuffling);
+    this.el.btnShuffle.innerHTML = `${iconShuffle(13)}<span>Shuffle</span>`;
     const label = this.state.repeatMode === 'off'
       ? 'Repeat: off'
       : this.state.repeatMode === 'one'
         ? 'Repeat: one'
         : 'Repeat: all';
-    this.el.btnRepeat.textContent = label;
+    this.el.btnRepeat.innerHTML = `${iconRepeat(13)}<span>${label}</span>`;
   }
 
-  _setPlayIcon(isPlaying) {
-    this.el.btnPlayPause.textContent = isPlaying ? '⏸' : '▶';
+  private _setPlayIcon(isPlaying?: boolean): void {
+    this.el.btnPlayPause.innerHTML = isPlaying ? iconPause(18) : iconPlay(18);
   }
 
-  async bindAndPlayTrack(track) {
+  async bindAndPlayTrack(track: PlayableTrack): Promise<void> {
     // track: { id, title, ext, playlistName? }
     if (!track || !track.id) return;
 
     // Ambil Blob dari IndexedDB
-    let objectUrl = null;
+    let objectUrl: string | null = null;
     const stored = await getTrack(track.id);
 
     if (!stored?.blob) {
@@ -206,7 +247,7 @@ export class Player {
       try {
         URL.revokeObjectURL(this._currentObjectUrl);
       } catch {
-        // Ignore errors
+        // ignore errors
       }
     }
     this._currentObjectUrl = objectUrl;
@@ -227,19 +268,19 @@ export class Player {
     this._syncProgressMax();
     this._setPlayIcon(true);
 
-    // Update Media Session metadata with title & cover
-    this._updateMediaSession(track);
+    // Update Media Session metadata dengan judul & cover
+    void this._updateMediaSession(track);
   }
 
-  play() {
+  play(): void {
     this.audio.play().catch(() => {});
   }
 
-  pause() {
+  pause(): void {
     this.audio.pause();
   }
 
-  prev() {
+  prev(): void {
     const { queue } = this.getActiveQueue();
     if (!queue.length) return;
 
@@ -250,7 +291,7 @@ export class Player {
     this.onSeekToIndex?.(queue[nextIndex]);
   }
 
-  next() {
+  next(): void {
     const { queue } = this.getActiveQueue();
     if (!queue.length) return;
 
@@ -267,12 +308,12 @@ export class Player {
     this.onSeekToIndex?.(queue[nextIndex]);
   }
 
-  _getPrevIndex(queue) {
+  private _getPrevIndex(queue: string[]): number {
     if (this.state.currentIndex === -1) return queue.length - 1;
     return this.state.currentIndex - 1;
   }
 
-  _getNextIndex(queue) {
+  private _getNextIndex(queue: string[]): number | null {
     const lastIdx = queue.length - 1;
     if (this.state.currentIndex === -1) return 0;
 
@@ -283,7 +324,7 @@ export class Player {
     return this.state.currentIndex + 1;
   }
 
-  _onTimeUpdate() {
+  private _onTimeUpdate(): void {
     const cur = this.audio.currentTime || 0;
     const dur = this.audio.duration || 0;
 
@@ -299,14 +340,14 @@ export class Player {
     this.el.progressFill.style.opacity = dur ? '1' : '0';
   }
 
-  _onDurationChange() {
+  private _onDurationChange(): void {
     const dur = this.audio.duration;
     if (!dur || !isFinite(dur)) return;
     this.el.durationTime.textContent = formatTime(dur);
     this._syncProgressMax();
   }
 
-  _syncProgressMax() {
+  private _syncProgressMax(): void {
     const dur = this.audio.duration;
     if (!dur || !isFinite(dur) || dur <= 0) return;
     this.el.progressRange.max = '1000';
@@ -315,7 +356,7 @@ export class Player {
     this.el.durationTime.textContent = formatTime(dur);
   }
 
-  _rangeToTime() {
+  private _rangeToTime(): number {
     const dur = this.audio.duration || 0;
     const max = Number(this.el.progressRange.max);
     const v = Number(this.el.progressRange.value);
@@ -323,7 +364,7 @@ export class Player {
     return (v / max) * dur;
   }
 
-  _onEnded() {
+  private _onEnded(): void {
     if (this.state.repeatMode === 'one') {
       this.audio.currentTime = 0;
       this.audio.play().catch(() => {});
@@ -333,17 +374,30 @@ export class Player {
   }
 }
 
-function formatTime(seconds) {
+function isTypingElement(el: Element | null): boolean {
+  if (!el) return false;
+  if (el instanceof HTMLElement && el.isContentEditable) return true;
+  const tag = el.tagName;
+  if (!tag) return false;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') {
+    const type = (el.getAttribute('type') || '').toLowerCase();
+    const textLike = ['text', 'search', 'email', 'url', 'tel', 'password', 'number'];
+    return textLike.includes(type) || tag === 'TEXTAREA';
+  }
+  return false;
+}
+
+function formatTime(seconds: number): string {
   const s = Math.max(0, seconds);
   const m = Math.floor(s / 60);
   const r = Math.floor(s % 60);
   return m + ':' + String(r).padStart(2, '0');
 }
 
-function blobToDataURL(blob) {
+function blobToDataURL(blob: Blob): Promise<string> {
   return new Promise((resolve) => {
     const reader = new FileReader();
-    reader.onload = () => resolve(reader.result);
+    reader.onload = () => resolve(String(reader.result || ''));
     reader.readAsDataURL(blob);
   });
 }

@@ -1,8 +1,14 @@
-import { getPlaylists, setPlaylists, uid } from './storage.js';
+// ============================================================
+// playlist.ts — Service CRUD Playlist
+// Port TypeScript dari js/playlist.js.
+// ============================================================
 
-const MAX_PLAYLIST_NAME = 20;
+import type { Playlist } from '../types/track';
+import { getPlaylists, setPlaylists, uid } from './storage';
 
-export function createNewPlaylist(name) {
+export const MAX_PLAYLIST_NAME = 20;
+
+export function createNewPlaylist(name: string): Playlist {
   const trimmed = (name || '').trim();
   if (!trimmed) throw new Error('Nama playlist kosong');
   if (trimmed.length > MAX_PLAYLIST_NAME) {
@@ -10,7 +16,7 @@ export function createNewPlaylist(name) {
   }
 
   const playlists = getPlaylists();
-  const pl = {
+  const pl: Playlist = {
     id: uid(),
     name: trimmed,
     createdAt: Date.now(),
@@ -21,7 +27,7 @@ export function createNewPlaylist(name) {
   return pl;
 }
 
-export function addTracksToPlaylist(playlistId, trackIds) {
+export function addTracksToPlaylist(playlistId: string, trackIds: string[]): void {
   const playlists = getPlaylists();
   const pl = playlists.find((p) => p.id === playlistId);
   if (!pl) return;
@@ -34,7 +40,7 @@ export function addTracksToPlaylist(playlistId, trackIds) {
   setPlaylists(playlists);
 }
 
-export function removeTrackFromPlaylist(playlistId, trackId) {
+export function removeTrackFromPlaylist(playlistId: string, trackId: string): void {
   const playlists = getPlaylists();
   const pl = playlists.find((p) => p.id === playlistId);
   if (!pl) return;
@@ -42,7 +48,7 @@ export function removeTrackFromPlaylist(playlistId, trackId) {
   setPlaylists(playlists);
 }
 
-export function reorderPlaylist(playlistId, fromIndex, toIndex) {
+export function reorderPlaylist(playlistId: string, fromIndex: number, toIndex: number): void {
   const playlists = getPlaylists();
   const pl = playlists.find((p) => p.id === playlistId);
   if (!pl) return;
@@ -55,9 +61,8 @@ export function reorderPlaylist(playlistId, fromIndex, toIndex) {
   setPlaylists(playlists);
 }
 
-export function deletePlaylist(playlistId) {
+export function deletePlaylist(playlistId: string): void {
   const playlists = getPlaylists();
   const filtered = playlists.filter((p) => p.id !== playlistId);
   setPlaylists(filtered);
 }
-

@@ -1,0 +1,22 @@
+{
+  "name": "aura-steam-music-player",
+  "version": "2.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Music Player PWA 'Eternal Abyss' — fondasi Vite + TypeScript + Tailwind CSS",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "icons": "node scripts/optimize-icons.mjs",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.20",
+    "postcss": "^8.4.47",
+    "sharp": "^0.35.4",
+    "tailwindcss": "^3.4.13",
+    "typescript": "^5.6.3",
+    "vite": "^5.4.10"
+  }
+}
