@@ -1,6 +1,6 @@
 import { defineConfig } from 'vite';
 
-// Konfigurasi Vite untuk Music Player PWA 'Eternal Abyss'.
+// Konfigurasi Vite untuk Music Player PWA 'Eternal Abysss'.
 // base '/Play-Audio-By-Youre-Self/' agar asset build cocok dengan
 // sub-path GitHub Pages (https://<user>.github.io/Play-Audio-By-Youre-Self/).
 export default defineConfig({
