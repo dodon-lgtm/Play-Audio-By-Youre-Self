@@ -66,6 +66,8 @@ export interface AppElements extends PlayerDomElements {
   playerCollapse: HTMLElement;
   /** Tombol favorit lagu aktif di modal full-screen. */
   playerFavorite: HTMLElement;
+  /** Canvas Audio Spectrum / VU Level Meter (strip bawah player, dekat Repeat/Shuffle). */
+  playerVisualizer: HTMLCanvasElement;
   filePicker: HTMLInputElement;
   addAudioBtn: HTMLElement;
   addAudioBtnMobile: HTMLElement;

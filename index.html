@@ -190,6 +190,13 @@
             <span class="volume-value" id="volumeValue">80%</span>
           </div>
         </div>
+
+        <!-- Audio Spectrum / VU Level Meter: strip tipis di bagian bawah player,
+             berdekatan dengan baris tombol Repeat/Shuffle. Digambar real-time
+             via Web Audio API + requestAnimationFrame (src/ui/visualizer.ts). -->
+        <div class="player-viz-row">
+          <canvas id="playerVisualizer" class="player-viz" aria-hidden="true"></canvas>
+        </div>
       </div>
 
       <audio id="audio" preload="metadata"></audio>

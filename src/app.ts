@@ -24,7 +24,13 @@ import {
   uid
 } from './services/storage';
 import { createUI } from './ui';
-import { closeMobilePlayer, openMobilePlayer, syncFavoriteButton } from './ui/playerUI';
+import {
+  attachPlayerVisualizer,
+  closeMobilePlayer,
+  openMobilePlayer,
+  resetPlayerVisualizer,
+  syncFavoriteButton
+} from './ui/playerUI';
 import type { AppElements, AppState, NavigateParams, Route } from './types/app';
 
 function extOf(name: string): string {
@@ -97,6 +103,7 @@ function getElements(): AppElements {
     btnRepeat: req('btnRepeat'),
     progressRange: req('progressRange'),
     volumeRange: req('volumeRange'),
+    playerVisualizer: req<HTMLCanvasElement>('playerVisualizer'),
     filePicker: req<HTMLInputElement>('filePicker'),
     addAudioBtn: req('addAudioBtn'),
     addAudioBtnMobile: req('addAudioBtnMobile'),
@@ -194,6 +201,13 @@ export function startApp(): void {
   };
 
   const ui = createUI(els, state, router);
+
+  // Audio Spectrum / VU Level Meter: pasang visualizer pada canvas di bagian
+  // bawah player (berdekatan dengan tombol Repeat/Shuffle). Loop render
+  // otomatis berhenti (cancelAnimationFrame) saat pause/stop, dan batang
+  // dibersihkan setiap berpindah track.
+  attachPlayerVisualizer(els);
+  player.onTrackChanged = () => resetPlayerVisualizer();
 
   player.onSeekToIndex = async (trackId: string) => {
     const track = getLibrary().find((t) => t.id === trackId);

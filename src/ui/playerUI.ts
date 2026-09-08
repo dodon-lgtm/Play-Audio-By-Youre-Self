@@ -7,12 +7,15 @@
 //    artis/file key, progress + timestamp, tombol utama (shuffle,
 //    prev, play/pause, next, repeat), volume, favorit, dan tombol
 //    tutup (chevron-down) di pojok atas.
+//  - Audio Spectrum / VU Level Meter: canvas strip di bagian bawah
+//    player (dekat tombol Repeat/Shuffle), logikanya di visualizer.ts.
 // ============================================================
 
 import type { AppElements } from '../types/app';
 import type { Track } from '../types/track';
 import { DEFAULT_COVER, loadCoverForTrack } from './shared';
 import { iconStar, iconStarFilled } from './icons';
+import { AudioVisualizer } from './visualizer';
 
 /** Breakpoint mobile — HARUS sinkron dengan `@media (max-width: 760px)` di src/index.css. */
 const MOBILE_QUERY = '(max-width: 760px)';
@@ -101,4 +104,34 @@ export function syncFavoriteButton(btn: HTMLElement, isFavorite: boolean): void 
   btn.setAttribute('aria-pressed', String(isFavorite));
   btn.setAttribute('aria-label', isFavorite ? 'Hapus dari favorit' : 'Tambah ke favorit');
   btn.innerHTML = isFavorite ? iconStarFilled(20) : iconStar(20);
+}
+
+// ============================================================
+// Audio Spectrum / VU Level Meter (Web Audio API + <canvas>)
+// ============================================================
+
+/**
+ * Instance visualizer aktif (singleton).
+ * Elemen <audio> hanya boleh dihubungkan ke AudioContext satu kali
+ * (createMediaElementSource melempar error bila diulang), sehingga
+ * pemasangan dibuat idempotent.
+ */
+let activeVisualizer: AudioVisualizer | null = null;
+
+/**
+ * Pasang visualizer spectrum pada `<canvas id="playerVisualizer">` yang
+ * berada di bagian bawah player (berdekatan dengan tombol Repeat/Shuffle).
+ * AudioContext dibuat lazy saat lagu pertama kali diputar; loop render
+ * otomatis berhenti via cancelAnimationFrame saat pause/stop/ganti track.
+ */
+export function attachPlayerVisualizer(els: AppElements): AudioVisualizer {
+  if (!activeVisualizer) {
+    activeVisualizer = new AudioVisualizer(els.audio, els.playerVisualizer);
+  }
+  return activeVisualizer;
+}
+
+/** Reset batang visualizer — dipanggil saat berpindah track. */
+export function resetPlayerVisualizer(): void {
+  activeVisualizer?.reset();
 }

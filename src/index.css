@@ -57,7 +57,8 @@
     min-width: 0;
     max-height: 100vh;
     overflow-y: auto;
-    padding: 20px 24px 110px;
+    /* 150px: tinggi mini player + baris visualizer baru agar konten tak tertutup. */
+    padding: 20px 24px 150px;
   }
 
   .page { max-width: 1100px; margin: 0 auto; min-height: 0; }
@@ -354,6 +355,21 @@
   #volumeRange { width: 100px; }
   .volume-value { width: 40px; text-align: right; font-size: 11px; color: var(--muted); }
 
+  /* ============ AUDIO SPECTRUM / VU LEVEL METER ============ */
+  /* Strip tipis di bagian bawah player, berdekatan dengan baris tombol
+     Repeat/Shuffle. Lebar penuh & tinggi kecil agar hemat ruang. */
+  .player-viz-row {
+    @apply col-span-full flex items-end;
+    margin-top: -4px; /* menempel erat di bawah baris Repeat/Shuffle */
+  }
+  .player-viz {
+    @apply block w-full min-w-0;
+    height: 22px;
+    border: 1px solid rgba(255, 255, 255, .06);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, .03);
+  }
+
   @media (max-width: 980px) {
     .player-grid { grid-template-columns: 1fr 320px; grid-template-rows: auto auto; }
     .player-progress { grid-column: 1 / -1; }
@@ -388,6 +404,10 @@
     #player:not(.is-expanded) .progress-top { grid-template-columns: 1fr; gap: 0; }
     #player:not(.is-expanded) .progress-wrap { height: 14px; }
 
+    /* Mini bar: visualizer disembunyikan agar mini player tetap ringkas
+       (tinggi 80px dijaga; visualizer tampil di modal full-screen). */
+    #player:not(.is-expanded) .player-viz-row { display: none; }
+
     /* ---- Mode expanded: modal full-screen player ---- */
     #player.is-expanded {
       top: 0;
@@ -412,6 +432,10 @@
     #player.is-expanded .player-progress { order: 3; }
     #player.is-expanded .player-controls { order: 4; margin-top: 4px; }
     #player.is-expanded .player-track { display: none; }
+
+    /* Visualizer: strip spectrum tepat di bawah tombol Shuffle/Repeat. */
+    #player.is-expanded .player-viz-row { order: 5; margin-top: 0; }
+    #player.is-expanded .player-viz { height: 28px; }
 
     /* Timestamp, tombol prev, pills shuffle/repeat, dan volume tampil kembali. */
     #player.is-expanded .time { display: block; }
