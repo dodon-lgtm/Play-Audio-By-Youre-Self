@@ -1,0 +1,65 @@
+# Deploy otomatis ke GitHub Pages setiap kali push ke branch `main`.
+# Alur: checkout -> setup Node -> npm ci -> npm run build -> upload dist -> deploy ke Pages.
+#
+# PENTING: Di GitHub, set Settings -> Pages -> Source = "GitHub Actions"
+# agar job `deploy` di bawah ini diizinkan mem-publish situs.
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: # izinkan jalankan manual dari tab Actions
+
+permissions:
+  contents: read
+  pages: write      # dibutuhkan untuk deploy ke GitHub Pages
+  id-token: write   # dibutuhkan untuk autentikasi OIDC actions/deploy-pages
+
+# Hanya satu deploy pada satu waktu; batalkan run yang sedang antre
+# jika ada push baru, agar tidak saling menimpa.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (npm run build)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Setup GitHub Pages
+        uses: actions/configure-pages@v5
+
+      - name: Install dependencies
+        # `npm ci` memakai package-lock.json (instalasi deterministik di CI)
+        run: npm ci
+
+      - name: Build project
+        # package.json: "build": "tsc --noEmit && vite build"
+        # vite.config.ts sudah memakai base: '/Play-Audio-By-Youre-Self/'
+        run: npm run build
+
+      - name: Upload folder dist sebagai artifact Pages
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    name: Deploy ke GitHub Pages
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy artifact ke GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
